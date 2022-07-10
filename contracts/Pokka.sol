@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.7;
 
-contract Pokka {
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol"
+
+contract Pokka is ReentrancyGuard {
     
 }

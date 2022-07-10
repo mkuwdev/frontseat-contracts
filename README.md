@@ -1,1 +1,1 @@
-Contracts for <Insert Project Name Here>
+Contracts for _project name_

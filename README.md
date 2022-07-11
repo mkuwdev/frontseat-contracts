@@ -1,1 +1,2 @@
-Contracts for _project name_
+## Frontseat Contracts
+

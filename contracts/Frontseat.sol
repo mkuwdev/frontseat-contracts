@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 // PLACE ERRORS HERE
 error NotCreator(address user);
+error PostNotFound(address creator, uint256 postId);
 error NoReceivable();
 
 contract Frontseat is ReentrancyGuard {
@@ -22,6 +23,17 @@ contract Frontseat is ReentrancyGuard {
         address indexed creator,
         uint256 indexed postId,
         string indexed contentUri
+    );
+
+    event PostEdited (
+        address indexed creator,
+        uint256 indexed postId,
+        string indexed contentUri
+    );
+
+    event PostDeleted (
+        address indexed creator,
+        uint256 indexed postId
     );
 
     event EarningsWithdrawn (
@@ -55,12 +67,18 @@ contract Frontseat is ReentrancyGuard {
     mapping (address => mapping(uint256 => Post)) postRegistry;
 
     // Modifiers
-    modifier isCreator(
-        address _user
-    ) {
+    modifier isCreator(address _user) {
         CreatorProfile memory profile = creatorRegistry[_user];
         if (profile.membershipNft == address(0)) {
             revert NotCreator(_user);
+        }
+        _;
+    }
+
+    modifier postExists(address _creator, uint256 _postId) {
+        Post memory post = postRegistry[_creator][_postId];
+        if (post.id > 0) {
+            revert PostNotFound(_creator, _postId);
         }
         _;
     }
@@ -75,20 +93,38 @@ contract Frontseat is ReentrancyGuard {
     // TODO: Launch membership nft collection and change status to creator
     // ///////////////////////////////TO DO///////////////////////////////
 
-    function postPublication(string calldata _contentUri) external isCreator(msg.sender) {
-        address _publisher = msg.sender;
-        creatorRegistry[_publisher].postCount.increment();
-        uint256 _postId = creatorRegistry[_publisher].postCount.current();
-        postRegistry[_publisher][_postId] = Post({
+    function addPost(string calldata _contentUri) 
+        external 
+        isCreator(msg.sender) 
+    {
+        address _creator = msg.sender;
+        creatorRegistry[_creator].postCount.increment();
+        uint256 _postId = creatorRegistry[_creator].postCount.current();
+        postRegistry[_creator][_postId] = Post({
             id: _postId,
             contentUri: _contentUri,
             uploadTime: block.timestamp
         });
-        emit PostAdded(_publisher, _postId, _contentUri);
+        emit PostAdded(_creator, _postId, _contentUri);
     }
 
-    // TODO: Edit, Hide, Delete
-    // ///////////////////////////////TO DO///////////////////////////////
+    function editPost(uint256 _postId, string calldata _contentUri) 
+        external 
+        isCreator(msg.sender)
+        postExists(msg.sender, _postId)
+    {
+        postRegistry[msg.sender][_postId].contentUri = _contentUri;
+        emit PostEdited(msg.sender, _postId, _contentUri);
+    }
+
+    function deletePost(uint256 _postId) 
+        external 
+        isCreator(msg.sender)
+        postExists(msg.sender, _postId)
+    {
+        delete (postRegistry[msg.sender][_postId]);
+        emit PostDeleted(msg.sender, _postId);
+    }
 
     function withdrawEarnings() external nonReentrant {
         address _user = msg.sender;

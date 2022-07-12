@@ -4,8 +4,11 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-// PLACE ERRORS HERE
+import "./SampleNFT.sol";
+
+// Errors
 error NotCreator(address user);
+error AlreadyCreator(address user);
 error PostNotFound(address creator, uint256 postId);
 error NoReceivable();
 
@@ -13,10 +16,18 @@ contract Frontseat is ReentrancyGuard {
 
     using Counters for Counters.Counter;
 
-    // EVENTS
+    // Events
     event ProfileUpdated (
         address indexed user,
         string indexed newProfile
+    );
+
+    event MembershipLaunched (
+        address indexed user,
+        address indexed nftCollection,
+        string indexed contentUri,
+        uint256 supply,
+        uint256 price
     );
 
     event PostAdded (
@@ -42,7 +53,7 @@ contract Frontseat is ReentrancyGuard {
         uint256 indexed amount
     );
 
-    // STRUCTS
+    // Structs
     struct Profile {
         string personalDetailUri;
         bool isCreator;
@@ -60,11 +71,11 @@ contract Frontseat is ReentrancyGuard {
     }
 
     // Mappings
-    mapping (address => Profile) profileRegistry;
-    mapping (address => CreatorProfile) creatorRegistry;
-    mapping (address => uint256) earnings;
-    mapping (address => address) withdrawalAccount;
-    mapping (address => mapping(uint256 => Post)) postRegistry;
+    mapping (address => Profile) private profileRegistry;
+    mapping (address => CreatorProfile) private creatorRegistry;
+    mapping (address => uint256) private earnings;
+    mapping (address => address) private withdrawalAccount;
+    mapping (address => mapping(uint256 => Post)) private postRegistry;
 
     // Modifiers
     modifier isCreator(address _user) {
@@ -75,9 +86,17 @@ contract Frontseat is ReentrancyGuard {
         _;
     }
 
+    modifier notCreator(address _user) {
+        CreatorProfile memory profile = creatorRegistry[_user];
+        if (profile.membershipNft != address(0)) {
+            revert AlreadyCreator(_user);
+        }
+        _;
+    }
+
     modifier postExists(address _creator, uint256 _postId) {
         Post memory post = postRegistry[_creator][_postId];
-        if (post.id > 0) {
+        if (post.id <= 0) {
             revert PostNotFound(_creator, _postId);
         }
         _;
@@ -90,8 +109,16 @@ contract Frontseat is ReentrancyGuard {
         emit ProfileUpdated(_user, _contentUri);
     }
 
-    // TODO: Launch membership nft collection and change status to creator
-    // ///////////////////////////////TO DO///////////////////////////////
+    function launchMembershipNft(string calldata _nftUri, uint256 _supply, uint256 _price)
+        external
+        notCreator(msg.sender)
+    {
+        address _user = msg.sender;
+        SampleNFT newCollection = new SampleNFT(_nftUri, _supply, _price);
+        profileRegistry[_user].isCreator = true;
+        creatorRegistry[_user].membershipNft = address(newCollection);
+        emit MembershipLaunched(_user, address(newCollection), _nftUri, _supply, _price);
+    }
 
     function addPost(string calldata _contentUri) 
         external 
@@ -141,6 +168,30 @@ contract Frontseat is ReentrancyGuard {
         emit EarningsWithdrawn(_user, withdrawalAccount[_user], _receivable);
     }
 
-    // TODO: GETTER FUNCTIONS
-    // ///////////////////////////////TO DO///////////////////////////////
+    // Getter
+    function getProfile(address _user) external view returns (string memory) {
+        return profileRegistry[_user].personalDetailUri;
+    }
+
+    function getMembershipNft(address _creator) 
+        external 
+        view 
+        isCreator(msg.sender) 
+        returns (address) 
+    {
+        return creatorRegistry[_creator].membershipNft;
+    }
+
+    function getPost(address _creator, uint256 _postId) 
+        external 
+        view
+        postExists(_creator, _postId) 
+        returns (string memory) 
+    {
+        return postRegistry[_creator][_postId].contentUri;
+    }
+
+    function getEarnings(address _creator) external view returns (uint256) {
+        return earnings[_creator];
+    }
 }

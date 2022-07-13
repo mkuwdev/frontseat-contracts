@@ -4,7 +4,7 @@ pragma solidity ^0.8.7;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-import "./MembershipNFT.sol";
+import "./SampleNFT.sol";
 
 // Errors
 error NotCreator(address user);
@@ -12,7 +12,7 @@ error AlreadyCreator(address user);
 error PostNotFound(address creator, uint256 postId);
 error NoReceivable();
 
-contract Frontseat is ReentrancyGuard {
+contract FrontseatV1 is ReentrancyGuard {
 
     using Counters for Counters.Counter;
 
@@ -109,27 +109,12 @@ contract Frontseat is ReentrancyGuard {
         emit ProfileUpdated(_user, _contentUri);
     }
 
-    function launchMembershipNft(
-        string calldata _name,
-        string calldata _symbol,
-        string calldata _nftUri,
-        uint256 _supply,
-        uint256 _price,
-        uint256 _royalty
-    )
+    function launchMembershipNft(string calldata _nftUri, uint256 _supply, uint256 _price)
         external
         notCreator(msg.sender)
     {
         address _user = msg.sender;
-        MembershipNFT newCollection = new MembershipNFT(
-            _name,
-            _symbol,
-            _nftUri,
-            msg.sender,
-            _supply,
-            _price,
-            _royalty
-        );
+        SampleNFT newCollection = new SampleNFT(_nftUri, _supply, _price);
         profileRegistry[_user].isCreator = true;
         creatorRegistry[_user].membershipNft = address(newCollection);
         emit MembershipLaunched(_user, address(newCollection), _nftUri, _supply, _price);

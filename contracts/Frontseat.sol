@@ -100,6 +100,10 @@ contract Frontseat is Ownable {
         _;
     }
 
+    constructor() {
+        withdrawalAccount = msg.sender;
+    } 
+
     // Functions
     function updateProfile(string calldata _contentUri) external {
         address _user = msg.sender;
@@ -200,4 +204,11 @@ contract Frontseat is Ownable {
     {
         return postRegistry[_creator][_postId].contentUri;
     }
+
+    function getBalance() external view returns (uint) {
+        return address(this).balance;
+    }
+
+    receive() external payable {}
+    fallback() external payable {}
 }

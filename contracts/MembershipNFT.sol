@@ -88,9 +88,9 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
     }
 
     function withdraw() public onlyOwner {
-        (bool fs, ) = payable(frontseat).call{value: address(this).balance * 250 / 10000}("");
+        (bool fs, ) = payable(address(frontseat)).call{value: address(this).balance * 25 / 1000}("");
         require(fs, "Transfer to frontseat failed");
-        (bool cs, ) = payable(creatorWithdrawal).call{value: address(this).balance}("");
+        (bool cs, ) = payable(address(creatorWithdrawal)).call{value: address(this).balance}("");
         require(cs, "Withdrawal to address failed");
     }
 
@@ -109,4 +109,7 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
     {
         return super.supportsInterface(interfaceId);
     }
+
+    // for testing purposes
+    function pay() public payable {}
 }

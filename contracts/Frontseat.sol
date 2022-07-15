@@ -6,16 +6,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import "./MembershipNFT.sol";
 
-// Errors
 error NotCreator(address user);
 error AlreadyCreator(address user);
 error PostNotFound(address creator, uint256 postId);
 
+/*
+* @title Frontseat
+* @notice Built for HackFS'22 
+*/
 contract Frontseat is Ownable {
 
     using Counters for Counters.Counter;
 
-    // Events
     event ProfileUpdated (
         address indexed user,
         string indexed newProfile
@@ -51,7 +53,6 @@ contract Frontseat is Ownable {
         uint256 indexed amount
     );
 
-    // Structs
     struct Profile {
         string personalDetailUri;
         bool isCreator;
@@ -70,12 +71,10 @@ contract Frontseat is Ownable {
 
     address public withdrawalAccount;
 
-    // Mappings
     mapping (address => Profile) private profileRegistry;
     mapping (address => CreatorProfile) private creatorRegistry;
     mapping (address => mapping(uint256 => Post)) private postRegistry;
 
-    // Modifiers
     modifier isCreator(address _user) {
         CreatorProfile memory profile = creatorRegistry[_user];
         if (profile.membershipNft == address(0)) {
@@ -104,13 +103,30 @@ contract Frontseat is Ownable {
         withdrawalAccount = msg.sender;
     } 
 
-    // Functions
+    /////////////////////
+    // Main Functions //
+    /////////////////////
+
+    /*
+     * @notice Method to update profile details
+     * @param contentUri Link to where new profile data is stored
+     */
     function updateProfile(string calldata _contentUri) external {
         address _user = msg.sender;
         profileRegistry[_user].personalDetailUri = _contentUri;
         emit ProfileUpdated(_user, _contentUri);
     }
 
+    /*
+     * @notice Method to launch membership NFT and become a creator
+     * @param name 
+     * @param symbol 
+     * @param nftUri 
+     * @param collectionUri Link to collection details (for Opensea)
+     * @param supply Max supply of membership NFT
+     * @param price Sale price of each item
+     * @param royalty Royalty to creator in bps (basis points)
+     */
     function launchMembershipNft(
         string calldata _name,
         string calldata _symbol,
@@ -139,6 +155,10 @@ contract Frontseat is Ownable {
         emit MembershipLaunched(_user, address(newCollection), _nftUri, _supply, _price);
     }
 
+    /*
+     * @notice Method to add a post
+     * @param contentUri Link to where post data is stored
+     */
     function addPost(string calldata _contentUri) 
         external 
         isCreator(msg.sender) 
@@ -154,6 +174,10 @@ contract Frontseat is Ownable {
         emit PostAdded(_creator, _postId, _contentUri);
     }
 
+    /*
+     * @notice Method to update a post
+     * @param contentUri Link to where updated post data is stored
+     */
     function editPost(uint256 _postId, string calldata _contentUri) 
         external 
         isCreator(msg.sender)
@@ -163,6 +187,10 @@ contract Frontseat is Ownable {
         emit PostEdited(msg.sender, _postId, _contentUri);
     }
 
+    /*
+     * @notice Method to delete a post
+     * @param postId Post ID of creator to be removed
+     */
     function deletePost(uint256 _postId) 
         external 
         isCreator(msg.sender)
@@ -172,37 +200,52 @@ contract Frontseat is Ownable {
         emit PostDeleted(msg.sender, _postId);
     }
 
+    /*
+     * @notice Method to change withdrawal account of Frontseat's earnings
+     * @param newAddress New address for withdrawal
+     */
     function changeWithdrawalAccount(address _newAddress) external onlyOwner {
         withdrawalAccount = _newAddress;
     }
 
-    function withdrawEarnings(uint256 amount) external onlyOwner {
-        require(amount <= address(this).balance, "Insufficient balance");
-        (bool success, ) = payable(withdrawalAccount).call{value: amount}("");
+    /*
+     * @notice Method to withdraw earnings
+     * @param amount Amount to be withdrawn
+     */
+    function withdrawEarnings(uint256 _amount) external onlyOwner {
+        require(_amount <= address(this).balance, "Insufficient balance");
+        (bool success, ) = payable(withdrawalAccount).call{value: _amount}("");
         require(success, "Transfer failed");
-        emit EarningsWithdrawn(withdrawalAccount, amount);
+        emit EarningsWithdrawn(withdrawalAccount, _amount);
     }
 
-    function getProfile(address _user) external view returns (string memory) {
-        return profileRegistry[_user].personalDetailUri;
-    }
+    //////////////////////
+    // Getter Functions //
+    //////////////////////
 
-    function getMembershipNft(address _creator) 
+    function getProfile(address _user) 
         external 
         view 
-        isCreator(msg.sender) 
-        returns (address) 
+        returns (Profile memory) {
+        return profileRegistry[_user];
+    }
+
+    function getCreatorProfile(address _creator) 
+        external 
+        view 
+        isCreator(_creator)
+        returns (CreatorProfile memory) 
     {
-        return creatorRegistry[_creator].membershipNft;
+        return creatorRegistry[_creator];
     }
 
     function getPost(address _creator, uint256 _postId) 
         external 
         view
         postExists(_creator, _postId) 
-        returns (string memory) 
+        returns (Post memory) 
     {
-        return postRegistry[_creator][_postId].contentUri;
+        return postRegistry[_creator][_postId];
     }
 
     function getBalance() external view returns (uint) {

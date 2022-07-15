@@ -55,7 +55,11 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
         _safeMint(msg.sender, supply.current());
     }
 
-    function initializeCollectionRoyalty(string memory _contractURI, address _receiver, uint96 _royalty) public onlyOwner {
+    function initializeCollectionRoyalty(
+        string memory _contractURI, 
+        address _receiver, 
+        uint96 _royalty
+    ) public onlyOwner {
         contractUri = _contractURI;
         royalty = _royalty;
         setRoyaltyInfo(_receiver, _royalty);
@@ -109,7 +113,4 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
     {
         return super.supportsInterface(interfaceId);
     }
-
-    // for testing purposes
-    function pay() public payable {}
 }

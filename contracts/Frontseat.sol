@@ -19,38 +19,38 @@ contract Frontseat is Ownable {
     using Counters for Counters.Counter;
 
     event ProfileUpdated (
-        address indexed user,
-        string indexed newProfile
+        address user,
+        string newProfile
     );
 
     event MembershipLaunched (
-        address indexed user,
-        address indexed nftCollection,
-        string indexed contentUri,
+        address user,
+        address nftCollection,
+        string contentUri,
         uint256 supply,
         uint256 price
     );
 
     event PostAdded (
-        address indexed creator,
-        uint256 indexed postId,
-        string indexed contentUri
+        address creator,
+        uint256 postId,
+        string contentUri
     );
 
     event PostEdited (
-        address indexed creator,
-        uint256 indexed postId,
-        string indexed contentUri
+        address creator,
+        uint256 postId,
+        string contentUri
     );
 
     event PostDeleted (
-        address indexed creator,
-        uint256 indexed postId
+        address creator,
+        uint256 postId
     );
 
     event EarningsWithdrawn (
-        address indexed withdrawalAddress,
-        uint256 indexed amount
+        address withdrawalAddress,
+        uint256 amount
     );
 
     struct Profile {

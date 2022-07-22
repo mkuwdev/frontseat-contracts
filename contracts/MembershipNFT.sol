@@ -18,6 +18,8 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
     string public contractUri;
     uint256 public maxSupply;
     uint256 public price;
+    uint256 public totalEarnings;
+    uint256 public totalWithdrawn;
     uint96 public royalty;
     address public creator;
     address public creatorWithdrawal;
@@ -52,6 +54,7 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
         require(msg.value >= price, "Insufficient funds!");
         supply.increment();
         minted[msg.sender] = true;
+        totalEarnings = totalEarnings + msg.value;
         _safeMint(msg.sender, supply.current());
     }
 
@@ -91,11 +94,21 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
         creatorWithdrawal = _newAddress;
     }
 
+    function getBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+
+    function getMintedAmount() public view returns (uint) {
+        return supply.current();
+    }
+
     function withdraw() public onlyOwner {
+        uint256 balance = address(this).balance;
         (bool fs, ) = payable(address(frontseat)).call{value: address(this).balance * 25 / 1000}("");
         require(fs, "Transfer to frontseat failed");
         (bool cs, ) = payable(address(creatorWithdrawal)).call{value: address(this).balance}("");
         require(cs, "Withdrawal to address failed");
+        totalWithdrawn = totalWithdrawn + balance;
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId)

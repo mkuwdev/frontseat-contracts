@@ -34,13 +34,15 @@ contract Frontseat is Ownable {
     event PostAdded (
         address creator,
         uint256 postId,
-        string contentUri
+        string contentCid,
+        string key
     );
 
     event PostEdited (
         address creator,
         uint256 postId,
-        string contentUri
+        string contentCid,
+        string key
     );
 
     event PostDeleted (
@@ -54,7 +56,7 @@ contract Frontseat is Ownable {
     );
 
     struct Profile {
-        string personalDetailUri;
+        string personalDetailCid;
         bool isCreator;
     }
 
@@ -65,8 +67,9 @@ contract Frontseat is Ownable {
 
     struct Post {
         uint256 id;
-        string contentUri;
+        string contentCid;
         uint256 uploadTime;
+        string key;
     }
 
     address public withdrawalAccount;
@@ -109,12 +112,12 @@ contract Frontseat is Ownable {
 
     /*
      * @notice Method to update profile details
-     * @param contentUri Link to where new profile data is stored
+     * @param contentCid CID to where new profile data is stored
      */
-    function updateProfile(string calldata _contentUri) external {
+    function updateProfile(string calldata _contentCid) external {
         address _user = msg.sender;
-        profileRegistry[_user].personalDetailUri = _contentUri;
-        emit ProfileUpdated(_user, _contentUri);
+        profileRegistry[_user].personalDetailCid = _contentCid;
+        emit ProfileUpdated(_user, _contentCid);
     }
 
     /*
@@ -157,9 +160,9 @@ contract Frontseat is Ownable {
 
     /*
      * @notice Method to add a post
-     * @param contentUri Link to where post data is stored
+     * @param contentCid CID to where post data is stored
      */
-    function addPost(string calldata _contentUri) 
+    function addPost(string calldata _contentCid, string calldata _key) 
         external 
         isCreator(msg.sender) 
     {
@@ -168,23 +171,25 @@ contract Frontseat is Ownable {
         uint256 _postId = creatorRegistry[_creator].postCount.current();
         postRegistry[_creator][_postId] = Post({
             id: _postId,
-            contentUri: _contentUri,
-            uploadTime: block.timestamp
+            contentCid: _contentCid,
+            uploadTime: block.timestamp,
+            key: _key
         });
-        emit PostAdded(_creator, _postId, _contentUri);
+        emit PostAdded(_creator, _postId, _contentCid, _key);
     }
 
     /*
      * @notice Method to update a post
-     * @param contentUri Link to where updated post data is stored
+     * @param contentCid CID to where updated post data is stored
      */
-    function editPost(uint256 _postId, string calldata _contentUri) 
+    function editPost(uint256 _postId, string calldata _contentCid, string calldata _key) 
         external 
         isCreator(msg.sender)
         postExists(msg.sender, _postId)
     {
-        postRegistry[msg.sender][_postId].contentUri = _contentUri;
-        emit PostEdited(msg.sender, _postId, _contentUri);
+        postRegistry[msg.sender][_postId].contentCid = _contentCid;
+        postRegistry[msg.sender][_postId].key = _key;
+        emit PostEdited(msg.sender, _postId, _contentCid, _key);
     }
 
     /*

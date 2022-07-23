@@ -42,6 +42,8 @@ contract MembershipNFT is ERC721, ERC721Enumerable, ERC2981, Ownable {
         frontseat = _frontseat;
         maxSupply = _supply;
         price = _price;
+        supply.increment();
+        _safeMint(creator, supply.current());
     }
 
     modifier mintCompliance(address _minter) {
